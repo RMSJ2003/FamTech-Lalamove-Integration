@@ -12,6 +12,14 @@ class LalamoveConfig(models.Model):
         ('production', 'Production')
     ])
     base_url = fields.Char(compute='_compute_base_url')
+    api_key_param = fields.Char(
+        string='API Key Status',
+        compute='_compute_param_status'
+    )
+    api_secret_param = fields.Char(
+        string='API Secret Status',
+        compute='_compute_param_status'
+    )
 
     def _compute_base_url(self):
         for rec in self:
@@ -19,6 +27,13 @@ class LalamoveConfig(models.Model):
                 rec.base_url = 'https://rest.lalamove.com'
             else:
                 rec.base_url = 'https://sandbox-rest.lalamove.com'
+
+    def _compute_param_status(self):
+        for rec in self:
+            key = self.env['ir.config_parameter'].sudo().get_param('lalamove.api_key')
+            secret = self.env['ir.config_parameter'].sudo().get_param('lalamove.api_secret')
+            rec.api_key_param = '✓ Configured' if key else '✗ Not configured'
+            rec.api_secret_param = '✓ Configured' if secret else '✗ Not configured'
 
     def _get_api_key(self):
         return self.env['ir.config_parameter'].sudo().get_param('lalamove.api_key')

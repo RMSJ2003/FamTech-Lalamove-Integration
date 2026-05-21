@@ -1,3 +1,3 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_lalamove_config,lalamove.config,model_lalamove_config,base.group_user,1,1,1,1
-access_lalamove_quotation,lalamove.quotation,model_lalamove_quotation,base.group_user,1,1,1,1
+access_lalamove_config,lalamove.config,famtech_lalamove_integration.model_lalamove_config,base.group_user,1,1,1,1
+access_lalamove_quotation,lalamove.quotation,famtech_lalamove_integration.model_lalamove_quotation,base.group_user,1,1,1,1
