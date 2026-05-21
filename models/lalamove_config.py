@@ -26,7 +26,8 @@ class LalamoveConfig(models.Model):
             if rec.environment == 'production':
                 rec.base_url = 'https://rest.lalamove.com'
             else:
-                rec.base_url = 'https://sandbox-rest.lalamove.com'
+                rec.base_url = 'https://rest.sandbox.lalamove.com'
+
 
     def _compute_param_status(self):
         for rec in self:
