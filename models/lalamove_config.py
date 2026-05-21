@@ -1,6 +1,6 @@
 from odoo import models, fields, api
 from odoo.exceptions import UserError
-import hmac, hashlib, time, requests
+import hmac, hashlib, time, requests, uuid
 
 class LalamoveConfig(models.Model):
     _name = 'lalamove.config'
@@ -48,7 +48,7 @@ class LalamoveConfig(models.Model):
         return {
             'Authorization': f'hmac {token}',
             'Market': 'PH',
-            'Request-ID': str(time.time()),
+            'Request-ID': str(uuid.uuid4()), # changed from 'Request-ID: str(time.time()),
             'Content-Type': 'application/json'
         }
 
