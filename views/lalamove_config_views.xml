@@ -28,11 +28,11 @@
         <field name="name">lalamove.config.list</field>
         <field name="model">lalamove.config</field>
         <field name="arch" type="xml">
-            <list string="Lalamove Configurations">
+            <tree string="Lalamove Configurations">
                 <field name="name"/>
                 <field name="environment"/>
                 <field name="base_url"/>
-            </list>
+            </tree>
         </field>
     </record>
 
@@ -40,7 +40,7 @@
     <record id="action_lalamove_config" model="ir.actions.act_window">
         <field name="name">Lalamove Configuration</field>
         <field name="res_model">lalamove.config</field>
-        <field name="view_mode">list,form</field>
+        <field name="view_mode">tree,form</field>
     </record>
 
     <!-- Menu Items -->
