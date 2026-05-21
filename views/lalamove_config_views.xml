@@ -16,10 +16,6 @@
                     <group string="API Credentials">
                         <field name="name"/>
                         <field name="environment"/>
-                        <field name="api_key" password="True"/>
-                        <field name="api_secret" password="True"/>
-                    </group>
-                    <group string="Server Info">
                         <field name="base_url" readonly="1"/>
                     </group>
                 </sheet>
