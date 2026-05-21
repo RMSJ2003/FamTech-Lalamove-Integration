@@ -6,15 +6,11 @@
         <field name="model">stock.picking</field>
         <field name="inherit_id" ref="stock.view_picking_form"/>
         <field name="arch" type="xml">
-            <xpath expr="//page[@name='additional_info']" position="after">
+            <xpath expr="//notebook" position="inside">
                 <page string="Lalamove Delivery" name="lalamove_delivery">
                     <group string="Booking Info">
                         <field name="lalamove_order_id" readonly="1"/>
-                        <field name="lalamove_status" readonly="1"
-                               decoration-success="lalamove_status == 'COMPLETED'"
-                               decoration-info="lalamove_status in ('ON_GOING', 'PICKED_UP')"
-                               decoration-warning="lalamove_status == 'ASSIGNING_DRIVER'"
-                               decoration-danger="lalamove_status in ('CANCELED', 'REJECTED', 'EXPIRED')"/>
+                        <field name="lalamove_status" readonly="1"/>
                         <field name="lalamove_tracking_url" widget="url" readonly="1"/>
                     </group>
                     <group string="Driver Info">
