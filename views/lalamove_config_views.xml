@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Form View -->
+    <record id="view_lalamove_config_form" model="ir.ui.view">
+        <field name="name">lalamove.config.form</field>
+        <field name="model">lalamove.config</field>
+        <field name="arch" type="xml">
+            <form string="Lalamove Configuration">
+                <header>
+                    <button name="test_connection"
+                            type="object"
+                            string="Test Connection"
+                            class="btn-primary"/>
+                </header>
+                <sheet>
+                    <group string="API Credentials">
+                        <field name="name"/>
+                        <field name="environment"/>
+                        <field name="api_key" password="True"/>
+                        <field name="api_secret" password="True"/>
+                    </group>
+                    <group string="Server Info">
+                        <field name="base_url" readonly="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- List View -->
+    <record id="view_lalamove_config_list" model="ir.ui.view">
+        <field name="name">lalamove.config.list</field>
+        <field name="model">lalamove.config</field>
+        <field name="arch" type="xml">
+            <list string="Lalamove Configurations">
+                <field name="name"/>
+                <field name="environment"/>
+                <field name="base_url"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_lalamove_config" model="ir.actions.act_window">
+        <field name="name">Lalamove Configuration</field>
+        <field name="res_model">lalamove.config</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- Menu Items -->
+    <menuitem id="menu_lalamove_root"
+              name="Lalamove"
+              sequence="90"/>
+
+    <menuitem id="menu_lalamove_config"
+              name="Configuration"
+              parent="menu_lalamove_root"
+              action="action_lalamove_config"
+              sequence="10"/>
+</odoo>

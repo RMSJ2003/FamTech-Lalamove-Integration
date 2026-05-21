@@ -1,16 +1,18 @@
-from odoo import models, fields
-import hmac, hashlib, time, json, requests
+from odoo import models, fields, api
+from odoo.exceptions import UserError
+import hmac, hashlib, time, requests
 
 class LalamoveConfig(models.Model):
     _name = 'lalamove.config'
     _description = 'Lalamove API Configuration'
-    
+
     name = fields.Char(required=True)
-    api_key = fields.Char(string='API Key', required=True)
-    api_secret = fields.Char(string='API Secret', required=True)
-    environment = fields.Selection([('sandbox','Sandbox'),('production','Production')])
+    environment = fields.Selection([
+        ('sandbox', 'Sandbox'),
+        ('production', 'Production')
+    ])
     base_url = fields.Char(compute='_compute_base_url')
-    
+
     def _compute_base_url(self):
         for rec in self:
             if rec.environment == 'production':
@@ -18,19 +20,31 @@ class LalamoveConfig(models.Model):
             else:
                 rec.base_url = 'https://sandbox-rest.lalamove.com'
 
+    def _get_api_key(self):
+        return self.env['ir.config_parameter'].sudo().get_param('lalamove.api_key')
+
+    def _get_api_secret(self):
+        return self.env['ir.config_parameter'].sudo().get_param('lalamove.api_secret')
+
     def generate_signature(self, method, path, body=''):
+        api_secret = self._get_api_secret()
+        if not api_secret:
+            raise UserError("Lalamove API Secret is not configured in System Parameters.")
         timestamp = str(int(time.time() * 1000))
         raw = f'{timestamp}\r\n{method}\r\n{path}\r\n\r\n{body}'
         signature = hmac.new(
-            self.api_secret.encode(),
+            api_secret.encode(),
             raw.encode(),
             hashlib.sha256
         ).hexdigest()
         return timestamp, signature
 
     def get_headers(self, method, path, body=''):
+        api_key = self._get_api_key()
+        if not api_key:
+            raise UserError("Lalamove API Key is not configured in System Parameters.")
         timestamp, signature = self.generate_signature(method, path, body)
-        token = f'{self.api_key}:{timestamp}:{signature}'
+        token = f'{api_key}:{timestamp}:{signature}'
         return {
             'Authorization': f'hmac {token}',
             'Market': 'PH',
@@ -41,13 +55,16 @@ class LalamoveConfig(models.Model):
     def test_connection(self):
         config = self.search([], limit=1)
         if not config:
-            raise Exception("No Lalamove config found. Please create one first.")
-        
-        url = f'{config.base_url}/v3/cities'
-        headers = config.get_headers('GET', '/v3/cities')
-        
-        response = requests.get(url, headers=headers)
-        
+            raise UserError("No Lalamove config found. Please create one first.")
+        try:
+            url = f'{config.base_url}/v3/cities'
+            headers = config.get_headers('GET', '/v3/cities')
+            response = requests.get(url, headers=headers, timeout=10)
+        except requests.exceptions.Timeout:
+            raise UserError("Could not reach Lalamove servers. Please try again.")
+        except requests.exceptions.ConnectionError:
+            raise UserError("Connection error. Please check your internet connection.")
+
         if response.status_code == 200:
             return {
                 'type': 'ir.actions.client',
@@ -58,5 +75,7 @@ class LalamoveConfig(models.Model):
                     'type': 'success',
                 }
             }
+        elif response.status_code == 401:
+            raise UserError("Invalid API credentials. Please check your API Key and Secret.")
         else:
-            raise Exception(f'Connection failed: {response.status_code} - {response.text}')
+            raise UserError(f'Connection failed: {response.status_code} - {response.text}')
