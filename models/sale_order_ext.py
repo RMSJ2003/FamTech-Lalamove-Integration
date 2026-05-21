@@ -8,9 +8,21 @@ class SaleOrderExt(models.Model):
     lalamove_quote_fee = fields.Char(string='Lalamove Quote Fee')
     lalamove_quote_eta = fields.Char(string='Estimated Delivery Time')
     lalamove_quotation_id = fields.Char(string='Quotation ID')
-    lalamove_tracking_url = fields.Char(string='Tracking URL', readonly=True)
-    lalamove_order_id = fields.Char(string='Lalamove Order ID', readonly=True)
-    lalamove_status = fields.Char(string='Delivery Status', readonly=True)
+    lalamove_tracking_url = fields.Char(
+        string='Tracking URL',
+        related='picking_ids.lalamove_tracking_url',
+        readonly=True
+    )
+    lalamove_order_id = fields.Char(
+        string='Lalamove Order ID',
+        related='picking_ids.lalamove_order_id',
+        readonly=True
+    )
+    lalamove_status = fields.Char(
+        string='Delivery Status',
+        related='picking_ids.lalamove_status',
+        readonly=True
+    )
 
     def action_get_lalamove_quote(self):
         # Check config
