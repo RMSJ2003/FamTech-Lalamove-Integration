@@ -6,6 +6,17 @@
         <field name="model">stock.picking</field>
         <field name="inherit_id" ref="stock.view_picking_form"/>
         <field name="arch" type="xml">
+
+            <!-- Add Book via Lalamove button to header -->
+            <xpath expr="//button[@name='button_validate']" position="before">
+                <button name="action_book_lalamove"
+                        type="object"
+                        string="Book via Lalamove"
+                        class="btn-primary"
+                        invisible="state in ('done', 'cancel')"/>
+            </xpath>
+
+            <!-- Add Lalamove tab to notebook -->
             <xpath expr="//notebook" position="inside">
                 <page string="Lalamove Delivery" name="lalamove_delivery">
                     <group string="Booking Info">
@@ -19,6 +30,7 @@
                     </group>
                 </page>
             </xpath>
+
         </field>
     </record>
 
