@@ -52,13 +52,11 @@ class StockPicking(models.Model):
             "data": {
                 "quotationId": quotation_id,
                 "sender": {
-                    "stopId": sale.lalamove_sender_stop_id if hasattr(sale, 'lalamove_sender_stop_id') else "",
                     "name": sender_name,
                     "phone": sender_phone
                 },
                 "recipients": [
                     {
-                        "stopId": sale.lalamove_recipient_stop_id if hasattr(sale, 'lalamove_recipient_stop_id') else "",
                         "name": partner.name,
                         "phone": phone,
                         "remarks": f"Delivery for {self.origin or self.name}"
