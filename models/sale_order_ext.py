@@ -10,7 +10,11 @@ class SaleOrderExt(models.Model):
     lalamove_quotation_id = fields.Char(string='Quotation ID')
     lalamove_tracking_url = fields.Char(string='Tracking URL', readonly=True)
     lalamove_order_id = fields.Char(string='Lalamove Order ID', readonly=True)
-    lalamove_status = fields.Char(string='Delivery Status', readonly=True)
+    lalamove_status = fields.Char(string='Lalamove Delivery Status', readonly=True)
+
+    # New - June 04 2026
+    lalamove_sender_stop_id = fields.Char(string='Sender Stop ID', readonly=True)
+    lalamove_recipient_stop_id = fields.Char(string='Recipient Stop ID', readonly=True)
 
     def action_get_lalamove_quote(self):
         # Check config
@@ -66,6 +70,11 @@ class SaleOrderExt(models.Model):
         if response.status_code == 201:
             data = response.json()['data']
 
+            # New - June 04 2026 - Extract stop IDs from quotation response
+            stops = data.get('stops', [])
+            sender_stop_id = stops[0].get('stopId', '') if len(stops) > 0 else ''
+            recipient_stop_id = stops[1].get('stopId', '') if len(stops) > 1 else ''
+
             self.env['lalamove.quotation'].create({
                 'sale_order_id': self.id,
                 'total_fee': data['priceBreakdown']['total'],
@@ -75,8 +84,12 @@ class SaleOrderExt(models.Model):
                 'expires_at': data['expiresAt'],
             })
 
+            # New - June 04 2026 - Save all quotation fields including stop IDs
             self.lalamove_quote_fee = f"{data['priceBreakdown']['total']} {data['priceBreakdown']['currency']}"
             self.lalamove_quotation_id = data['quotationId']
+            self.lalamove_quote_eta = data.get('expiresAt', '')
+            self.lalamove_sender_stop_id = sender_stop_id
+            self.lalamove_recipient_stop_id = recipient_stop_id
 
             return {
                 'type': 'ir.actions.client',
