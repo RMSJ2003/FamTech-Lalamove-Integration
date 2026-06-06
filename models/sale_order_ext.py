@@ -92,13 +92,11 @@ class SaleOrderExt(models.Model):
             self.lalamove_recipient_stop_id = recipient_stop_id
 
             return {
-                'type': 'ir.actions.client',
-                'tag': 'display_notification',
-                'params': {
-                    'title': 'Quote Retrieved!',
-                    'message': f"Delivery fee: {data['priceBreakdown']['total']} {data['priceBreakdown']['currency']}",
-                    'type': 'success',
-                }
+                'type': 'ir.actions.act_window',
+                'res_model': 'sale.order',
+                'res_id': self.id,
+                'view_mode': 'form',
+                'target': 'current',
             }
         elif response.status_code == 401:
             raise UserError("Invalid API credentials. Please check your Lalamove API Key and Secret in Settings.")
