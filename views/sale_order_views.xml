@@ -11,16 +11,17 @@
                         string="Get Lalamove Quote"
                         class="btn-primary"/>
             </xpath>
-            <xpath expr="//field[@name='note']" position="before">
-                <group string="Lalamove Delivery Quote" col="2">
-                    <field name="lalamove_quote_fee" readonly="1"/>
-                    <field name="lalamove_quotation_id" readonly="1"/>
-                    <field name="lalamove_quote_eta" readonly="1"/>
-                    <field name="lalamove_tracking_url" widget="url" readonly="1"/>
-                    <field name="lalamove_order_id" readonly="1"/>
-                    <field name="lalamove_status" readonly="1"/>
-                </group>
-            </xpath>
+            <xpath expr="//sheet/group" position="after">
+    <group string="Lalamove Delivery Quote" col="2">
+        <field name="lalamove_fee" readonly="1"/>
+        <field name="lalamove_quote_fee" readonly="1"/>
+        <field name="lalamove_quotation_id" readonly="1"/>
+        <field name="lalamove_quote_eta" readonly="1"/>
+        <field name="lalamove_tracking_url" widget="url" readonly="1"/>
+        <field name="lalamove_order_id" readonly="1"/>
+        <field name="lalamove_status" readonly="1"/>
+    </group>
+</xpath>
         </field>
     </record>
 </odoo>

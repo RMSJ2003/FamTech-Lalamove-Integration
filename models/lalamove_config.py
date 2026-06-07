@@ -1,6 +1,6 @@
 from odoo import models, fields, api
 from odoo.exceptions import UserError
-import hmac, hashlib, time, requests, uuid
+import hmac, hashlib, time, uuid, requests
 
 class LalamoveConfig(models.Model):
     _name = 'lalamove.config'
