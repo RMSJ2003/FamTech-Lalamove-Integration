@@ -5,23 +5,35 @@
         <field name="model">sale.order</field>
         <field name="inherit_id" ref="sale.view_order_form"/>
         <field name="arch" type="xml">
+
+            <!-- Get Lalamove Quote button -->
             <xpath expr="//button[@name='action_confirm']" position="after">
                 <button name="action_get_lalamove_quote"
                         type="object"
                         string="Get Lalamove Quote"
                         class="btn-primary"/>
             </xpath>
+
+            <!-- Lalamove Quote summary section -->
             <xpath expr="//sheet/group" position="after">
-    <group string="Lalamove Delivery Quote" col="2">
-        <field name="lalamove_fee" readonly="1"/>
-        <field name="lalamove_quote_fee" readonly="1"/>
-        <field name="lalamove_quotation_id" readonly="1"/>
-        <field name="lalamove_quote_eta" readonly="1"/>
-        <field name="lalamove_tracking_url" widget="url" readonly="1"/>
-        <field name="lalamove_order_id" readonly="1"/>
-        <field name="lalamove_status" readonly="1"/>
-    </group>
-</xpath>
+                <group string="Lalamove Delivery Quote" col="2">
+                    <field name="lalamove_fee" readonly="1"/>
+                    <field name="lalamove_quote_fee" readonly="1"/>
+                    <field name="lalamove_quotation_id" readonly="1"/>
+                    <field name="lalamove_quote_eta" readonly="1"/>
+                    <field name="lalamove_tracking_url" widget="url" readonly="1"/>
+                    <field name="lalamove_order_id" readonly="1"/>
+                    <field name="lalamove_status" readonly="1"/>
+                </group>
+            </xpath>
+
+            <!-- CEO Logic: Add Lalamove Fee + Adjusted Margin columns after price_subtotal -->
+            <xpath expr="//field[@name='order_line']/list//field[@name='price_subtotal']" position="after">
+                <field name="lalamove_cost" optional="show" readonly="1" string="Lalamove Fee"/>
+                <field name="margin_after_lalamove" optional="show" readonly="1" string="Margin (After Delivery)"/>
+                <field name="margin_after_lalamove_pct" optional="show" readonly="1" string="Margin % (After Delivery)"/>
+            </xpath>
+
         </field>
     </record>
 </odoo>
