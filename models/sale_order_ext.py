@@ -91,12 +91,32 @@ class SaleOrderExt(models.Model):
             self.lalamove_sender_stop_id = sender_stop_id
             self.lalamove_recipient_stop_id = recipient_stop_id
 
-            # ✅ CEO LOGIC: Distribute Lalamove fee per line (VAT exclusive)
-            # Cost column stays untouched — fee is deducted only from margin
+            # Distribute Lalamove fee per line
+            # Distribute Lalamove fee per line
             if self.order_line:
                 fee_per_line = fee / len(self.order_line)
                 for line in self.order_line:
-                    line.lalamove_cost = fee_per_line / 1.12  # extract VAT
+                    has_vat = any(
+                        abs(t.amount - 12.0) < 0.01
+                        for t in line.tax_id
+                        if t.amount_type == 'percent'
+                    )
+                    if has_vat:
+                        line.lalamove_cost = fee_per_line
+                    else:
+                        line.lalamove_cost = fee_per_line / 1.12
+
+                    # ── Force-write margin directly so native total picks it up ──
+                    revenue = line.price_subtotal or 0.0
+                    unit_cost = line.purchase_price or line.product_id.sudo().standard_price or 0.0
+                    cost = unit_cost * (line.product_uom_qty or 0.0)
+                    new_margin = revenue - cost - line.lalamove_cost
+
+                    # Write directly, bypassing compute
+                    line.write({
+                        'margin': new_margin,
+                        'margin_percent': (new_margin / revenue * 100) if revenue else 0.0,
+                    })
 
             return {
                 'type': 'ir.actions.client',
@@ -114,36 +134,34 @@ class SaleOrderExt(models.Model):
 class SaleOrderLineExt(models.Model):
     _inherit = 'sale.order.line'
 
-    purchase_price = fields.Float(string="Cost")  # ← add this back
+    purchase_price = fields.Float(string="Cost")
     lalamove_cost = fields.Float(string="Lalamove Fee")
 
-    margin_after_lalamove = fields.Float(
-        string="Margin (After Delivery)",
-        compute="_compute_margin_after_lalamove",
-        store=True
+    # Redeclare margin fields pointing to OUR compute method
+    margin = fields.Monetary(
+        string="Margin",
+        compute='_compute_margin_lalamove',
+        store=True,
+        currency_field='currency_id',
+    )
+    margin_percent = fields.Float(
+        string="Margin (%)",
+        compute='_compute_margin_lalamove',
+        store=True,
     )
 
-    margin_after_lalamove_pct = fields.Float(
-        string="Margin % (After Delivery)",
-        compute="_compute_margin_after_lalamove",
-        store=True
-    )
-
-    @api.depends('price_subtotal', 'purchase_price', 'product_uom_qty', 'lalamove_cost')
-    def _compute_margin_after_lalamove(self):
+    @api.depends('price_subtotal', 'purchase_price', 'product_uom_qty', 'lalamove_cost', 'product_id')
+    def _compute_margin_lalamove(self):
         for line in self:
+            # price_subtotal is always VAT-exclusive in Odoo
             revenue = line.price_subtotal or 0.0
-            # Use purchase_price (manually entered cost) first
-            # fallback to standard_price if not set
             unit_cost = line.purchase_price or line.product_id.sudo().standard_price or 0.0
             cost = unit_cost * (line.product_uom_qty or 0.0)
-            original_margin = revenue - cost
             lalamove = line.lalamove_cost or 0.0
 
-            # CEO Logic: deduct Lalamove fee from margin
-            line.margin_after_lalamove = original_margin - lalamove
+            line.margin = revenue - cost - lalamove
 
             if revenue:
-                line.margin_after_lalamove_pct = (line.margin_after_lalamove / revenue) * 100
+                line.margin_percent = (line.margin / revenue) * 100
             else:
-                line.margin_after_lalamove_pct = 0.0
+                line.margin_percent = 0.0
