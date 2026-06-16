@@ -5,22 +5,31 @@
         <field name="model">sale.order</field>
         <field name="inherit_id" ref="sale.view_order_form"/>
         <field name="arch" type="xml">
+
+            <!-- Button -->
             <xpath expr="//button[@name='action_confirm']" position="after">
                 <button name="action_get_lalamove_quote"
                         type="object"
                         string="Get Lalamove Quote"
-                        class="btn-primary"/>
+                        class="btn-primary"
+                        invisible="lalamove_fee > 0"/>
             </xpath>
-            <xpath expr="//field[@name='note']" position="before">
-                <group string="Lalamove Delivery Quote" col="2">
+
+            <!-- Info -->
+            <xpath expr="//sheet/group" position="after">
+                <group string="Lalamove Delivery Quote">
+                    <field name="lalamove_fee" readonly="1"/>
                     <field name="lalamove_quote_fee" readonly="1"/>
                     <field name="lalamove_quotation_id" readonly="1"/>
                     <field name="lalamove_quote_eta" readonly="1"/>
-                    <field name="lalamove_tracking_url" widget="url" readonly="1"/>
-                    <field name="lalamove_order_id" readonly="1"/>
-                    <field name="lalamove_status" readonly="1"/>
                 </group>
             </xpath>
+
+            <!-- Table: only show lalamove_cost per line, no extra margin columns -->
+            <xpath expr="//field[@name='order_line']/list//field[@name='price_subtotal']" position="after">
+                <field name="lalamove_cost" readonly="1"/>
+            </xpath>
+
         </field>
     </record>
 </odoo>
