@@ -1,13 +1,52 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    Stock Picking Views — Lalamove Integration
+    ==========================================
+    Extends the standard stock.picking (Delivery Order) views to add:
+    1. "Book via Lalamove" button in the form header
+    2. "Lalamove Delivery" tab in the form notebook with booking details
+    3. Color-coded status indicators in the delivery list view
+    4. Lalamove status column in the delivery list view
+
+    This view inherits from existing Odoo stock views and adds elements
+    without replacing the existing Delivery Order structure.
+
+    Related Python logic: stock_picking_ext.py
+        → action_book_lalamove()       (button action)
+        → sync_all_lalamove_orders()   (updates status fields)
+-->
 <odoo>
-    <!-- Form View -->
+    <!--
+        Inherited Form View — stock.picking
+        ====================================
+        Extends the standard Delivery Order form view with the
+        Book via Lalamove button and a Lalamove Delivery tab.
+    -->
     <record id="view_lalamove_stock_picking" model="ir.ui.view">
         <field name="name">stock.picking.lalamove</field>
         <field name="model">stock.picking</field>
+        <!-- Inherits from the standard Delivery Order form view -->
         <field name="inherit_id" ref="stock.view_picking_form"/>
         <field name="arch" type="xml">
 
-            <!-- Add Book via Lalamove button to header -->
+            <!--
+                Book via Lalamove button
+                ========================
+                Placed immediately before the standard Validate button
+                in the Delivery Order form header.
+                Calls action_book_lalamove() in stock_picking_ext.py.
+
+                Prerequisites before clicking (validated in Python):
+                - Lalamove config must exist in Settings
+                - Delivery must be linked to a Sales Order
+                - Sales Order must have a valid lalamove_quotation_id
+                - Sales Order must have sender and recipient stop IDs
+                - Customer and company must have phone numbers
+
+                Visibility rule:
+                - Hidden when state is 'done' or 'cancel'
+                - Visible in all other states (draft, waiting, ready)
+            -->
             <xpath expr="//button[@name='button_validate']" position="before">
                 <button name="action_book_lalamove"
                         type="object"
@@ -16,15 +55,43 @@
                         invisible="state in ('done', 'cancel')"/>
             </xpath>
 
-            <!-- Add Lalamove tab to notebook -->
+            <!--
+                Lalamove Delivery tab
+                =====================
+                Added as a new tab inside the notebook section of the
+                Delivery Order form. Displays booking results after
+                action_book_lalamove() is called successfully.
+
+                Booking Info group:
+                - lalamove_order_id    : 19-digit order ID from POST /v3/orders
+                - lalamove_status      : Current status updated by cron job
+                - lalamove_tracking_url: Clickable shareLink from POST /v3/orders
+
+                Driver Info group:
+                - lalamove_driver_name : Assigned driver name (from status sync)
+                - lalamove_driver_phone: Assigned driver phone (from status sync)
+
+                All fields are read-only — populated automatically by
+                action_book_lalamove() and sync_all_lalamove_orders()
+            -->
             <xpath expr="//notebook" position="inside">
                 <page string="Lalamove Delivery" name="lalamove_delivery">
                     <group string="Booking Info">
+                        <!-- 19-digit order ID — stored as Char not Integer -->
                         <field name="lalamove_order_id" readonly="1"/>
+
+                        <!--
+                            Delivery status — updated every 5 mins by cron job
+                            Possible values: ASSIGNING_DRIVER, ON_GOING,
+                            PICKED_UP, COMPLETED, CANCELED, REJECTED, EXPIRED
+                        -->
                         <field name="lalamove_status" readonly="1"/>
+
+                        <!-- Tracking URL rendered as a clickable hyperlink -->
                         <field name="lalamove_tracking_url" widget="url" readonly="1"/>
                     </group>
                     <group string="Driver Info">
+                        <!-- Populated after driver is assigned by Lalamove -->
                         <field name="lalamove_driver_name" readonly="1"/>
                         <field name="lalamove_driver_phone" readonly="1"/>
                     </group>
@@ -34,21 +101,53 @@
         </field>
     </record>
 
-    <!-- List View with color indicators -->
+    <!--
+        Inherited List View — stock.picking (Deliveries)
+        =================================================
+        Extends the standard Deliveries list view with:
+        1. Color-coded row decorations based on lalamove_status
+        2. Optional Lalamove Status column after the State column
+
+        Color coding (matches Phase 4 UI/UX spec):
+            ASSIGNING_DRIVER          → Yellow  (decoration-warning)
+            ON_GOING / PICKED_UP      → Blue    (decoration-info)
+            COMPLETED                 → Green   (decoration-success)
+            CANCELED / REJECTED
+            / EXPIRED                 → Red     (decoration-danger)
+    -->
     <record id="view_lalamove_stock_picking_list" model="ir.ui.view">
         <field name="name">stock.picking.lalamove.list</field>
         <field name="model">stock.picking</field>
+        <!-- Inherits from the standard Deliveries list view -->
         <field name="inherit_id" ref="stock.vpicktree"/>
         <field name="arch" type="xml">
+
+            <!--
+                Row color decorations based on lalamove_status
+                Applied to the entire list row for quick visual scanning
+            -->
             <xpath expr="//list" position="attributes">
+                <!-- Yellow — looking for an available driver -->
                 <attribute name="decoration-warning">lalamove_status == 'ASSIGNING_DRIVER'</attribute>
+                <!-- Blue — driver accepted or package picked up -->
                 <attribute name="decoration-info">lalamove_status in ('ON_GOING', 'PICKED_UP')</attribute>
+                <!-- Green — delivery successfully completed -->
                 <attribute name="decoration-success">lalamove_status == 'COMPLETED'</attribute>
+                <!-- Red — delivery cancelled, rejected, or expired -->
                 <attribute name="decoration-danger">lalamove_status in ('CANCELED', 'REJECTED', 'EXPIRED')</attribute>
             </xpath>
+
+            <!--
+                Lalamove Status column
+                ======================
+                Added after the standard State column in the list view.
+                optional="show" means it is visible by default but users
+                can hide it using the column visibility toggle.
+            -->
             <xpath expr="//field[@name='state']" position="after">
                 <field name="lalamove_status" optional="show"/>
             </xpath>
+
         </field>
     </record>
 </odoo>
