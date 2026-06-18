@@ -1,12 +1,42 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    Sale Order Views — Lalamove Integration
+    =======================================
+    Extends the standard sale.order form view to add:
+    1. "Get Lalamove Quote" button in the header
+    2. Lalamove Delivery Quote info group showing quote details
+    3. Lalamove Fee column in the order lines table
+
+    This view inherits from sale.view_order_form and adds elements
+    without replacing the existing Sales Order form structure.
+
+    Related Python logic: sale_order_ext.py → action_get_lalamove_quote()
+-->
 <odoo>
+    <!--
+        Inherited Form View — sale.order
+        =================================
+        Extends the standard Sales Order form view with
+        Lalamove quotation fields and the Get Quote button.
+    -->
     <record id="view_lalamove_sale_order" model="ir.ui.view">
         <field name="name">sale.order.lalamove</field>
         <field name="model">sale.order</field>
+        <!-- Inherits from the standard Sales Order form view -->
         <field name="inherit_id" ref="sale.view_order_form"/>
         <field name="arch" type="xml">
 
-            <!-- Button -->
+            <!--
+                Get Lalamove Quote button
+                =========================
+                Placed immediately after the standard Confirm button.
+                Calls action_get_lalamove_quote() in sale_order_ext.py.
+
+                Visibility rule:
+                - Hidden when lalamove_fee > 0 (quote already retrieved)
+                - Visible when no quote exists yet (lalamove_fee is 0)
+                This prevents duplicate quotations on the same order.
+            -->
             <xpath expr="//button[@name='action_confirm']" position="after">
                 <button name="action_get_lalamove_quote"
                         type="object"
@@ -15,7 +45,20 @@
                         invisible="lalamove_fee > 0"/>
             </xpath>
 
-            <!-- Info -->
+            <!--
+                Lalamove Delivery Quote info group
+                ===================================
+                Displayed below the main Sales Order fields.
+                Shows quotation details retrieved from POST /v3/quotations.
+                All fields are read-only — populated automatically by
+                action_get_lalamove_quote() in sale_order_ext.py.
+
+                Fields:
+                - lalamove_fee        : Numeric delivery fee (used for margin calc)
+                - lalamove_quote_fee  : Human-readable fee string (e.g. "90 PHP")
+                - lalamove_quotation_id : Unique quotation ID (valid 5 mins only)
+                - lalamove_quote_eta  : Quotation expiration timestamp (UTC)
+            -->
             <xpath expr="//sheet/group" position="after">
                 <group string="Lalamove Delivery Quote">
                     <field name="lalamove_fee" readonly="1"/>
@@ -25,7 +68,19 @@
                 </group>
             </xpath>
 
-            <!-- Table: only show lalamove_cost per line, no extra margin columns -->
+            <!--
+                Lalamove Fee column in order lines table
+                =========================================
+                Adds a read-only "Lalamove Fee" column after the
+                Subtotal column in the order lines table.
+
+                Shows each line's share of the total Lalamove delivery fee
+                as distributed by action_get_lalamove_quote() in sale_order_ext.py.
+
+                VAT-aware distribution:
+                - Lines with 12% VAT: full fee share
+                - Lines without VAT: fee share divided by 1.12
+            -->
             <xpath expr="//field[@name='order_line']/list//field[@name='price_subtotal']" position="after">
                 <field name="lalamove_cost" readonly="1"/>
             </xpath>
