@@ -1,25 +1,68 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    Lalamove Configuration Views
+    ============================
+    Defines the UI for the lalamove.config model including:
+    - Form view with Test Connection button
+    - List view for configuration records
+    - Window action to open the config
+    - Top-level Lalamove menu with Configuration submenu
+
+    Accessible via: Lalamove > Configuration (top navigation menu)
+
+    Note: API credentials are NOT shown in this form — only their
+    configuration status (✓ Configured / ✗ Not configured) is displayed.
+    Actual credentials are stored in:
+    Settings > Technical > Parameters > System Parameters
+-->
 <odoo>
-    <!-- Form View -->
+    <!--
+        Form View — lalamove.config
+        ===========================
+        Main configuration screen for the Lalamove integration.
+        Allows users to set the environment (sandbox/production)
+        and verify API credentials via the Test Connection button.
+    -->
     <record id="view_lalamove_config_form" model="ir.ui.view">
         <field name="name">lalamove.config.form</field>
         <field name="model">lalamove.config</field>
         <field name="arch" type="xml">
             <form string="Lalamove Configuration">
                 <header>
+                    <!--
+                        Test Connection button
+                        Calls test_connection() in lalamove_config.py
+                        which calls GET /v3/cities to verify API credentials
+                    -->
                     <button name="test_connection"
                             type="object"
                             string="Test Connection"
                             class="btn-primary"/>
                 </header>
                 <sheet>
+                    <!-- Basic config — record name and environment selection -->
                     <group string="Configuration">
                         <field name="name"/>
+                        <!-- Sandbox or Production — determines base_url -->
                         <field name="environment"/>
                     </group>
+
+                    <!--
+                        Auto-computed base URL based on environment:
+                        Sandbox:    https://rest.sandbox.lalamove.com
+                        Production: https://rest.lalamove.com
+                    -->
                     <group string="Server Info">
                         <field name="base_url" readonly="1"/>
                     </group>
+
+                    <!--
+                        Credential status indicators — read-only display only
+                        Shows ✓ Configured or ✗ Not configured
+                        Does NOT show actual key values for security
+                        To set credentials go to:
+                        Settings > Technical > Parameters > System Parameters
+                    -->
                     <group string="API Credentials">
                         <field name="api_key_param" readonly="1"/>
                         <field name="api_secret_param" readonly="1"/>
@@ -29,7 +72,12 @@
         </field>
     </record>
 
-    <!-- List View -->
+    <!--
+        List View — lalamove.config
+        ===========================
+        Shows all configuration records in a table.
+        Displays name, environment, and computed base URL.
+    -->
     <record id="view_lalamove_config_list" model="ir.ui.view">
         <field name="name">lalamove.config.list</field>
         <field name="model">lalamove.config</field>
@@ -37,23 +85,40 @@
             <list string="Lalamove Configurations">
                 <field name="name"/>
                 <field name="environment"/>
+                <!-- Auto-computed from environment — read-only -->
                 <field name="base_url"/>
             </list>
         </field>
     </record>
 
-    <!-- Action -->
+    <!--
+        Window Action — opens lalamove.config in list/form mode
+        Referenced by the Configuration menu item below
+    -->
     <record id="action_lalamove_config" model="ir.actions.act_window">
         <field name="name">Lalamove Configuration</field>
         <field name="res_model">lalamove.config</field>
         <field name="view_mode">list,form</field>
     </record>
 
-    <!-- Menu Items -->
+    <!--
+        Menu Structure
+        ==============
+        Creates a top-level "Lalamove" menu in the main navigation bar
+        with a "Configuration" submenu that opens the config list/form.
+
+        Menu path: Lalamove > Configuration
+
+        sequence="90" places Lalamove after standard Odoo modules
+        in the top navigation bar
+    -->
+
+    <!-- Top-level Lalamove menu item in the main navigation bar -->
     <menuitem id="menu_lalamove_root"
               name="Lalamove"
               sequence="90"/>
 
+    <!-- Configuration submenu — opens lalamove.config list/form -->
     <menuitem id="menu_lalamove_config"
               name="Configuration"
               parent="menu_lalamove_root"
