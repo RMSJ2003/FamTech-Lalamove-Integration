@@ -1,13 +1,44 @@
+<!-- Note: Comments are for the future maintainers of the system, please only change it when changing parts of the code-->
+
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <!--
+        Scheduled Action: Sync Lalamove Delivery Status
+        ================================================
+        This cron job automatically polls the Lalamove API every 5 minutes
+        to retrieve the latest delivery status for all active Lalamove bookings.
+        
+        It calls sync_all_lalamove_orders() in lalamove_order.py which:
+        - Finds all stock.picking records with an active lalamove_order_id
+        - Calls GET /v3/orders/{orderId} for each one
+        - Updates lalamove_status field with the returned status
+        - Marks delivery as done if status is COMPLETED
+        - Marks delivery as cancelled if status is CANCELED
+        
+        Runs under OdooBot (base.user_root) to ensure full system access
+        regardless of which user created the delivery order.
+    -->
     <record id="ir_cron_sync_lalamove" model="ir.cron">
+        <!-- Display name shown in Settings > Technical > Scheduled Actions -->
         <field name="name">Sync Lalamove Delivery Status</field>
+
+        <!-- The model this cron job runs against (stock.picking = Transfers) -->
         <field name="model_id" ref="stock.model_stock_picking"/>
+
+        <!-- Execute as Python code -->
         <field name="state">code</field>
+
+        <!-- Method called on each run — defined in lalamove_order.py -->
         <field name="code">model.sync_all_lalamove_orders()</field>
+
+        <!-- Run every 5 minutes -->
         <field name="interval_number">5</field>
         <field name="interval_type">minutes</field>
+
+        <!-- Active immediately on module install -->
         <field name="active">True</field>
+
+        <!-- Run as OdooBot for full system access -->
         <field name="user_id" ref="base.user_root"/>
     </record>
 </odoo>
